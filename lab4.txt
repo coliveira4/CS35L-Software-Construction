@@ -1,0 +1,266 @@
+Christina Oliveira
+TA:Dhavalikar
+Section 5
+UID: 204803448
+Lab 3: Debugging a C Program
+
+I first logged on to lnxsrv07 and created a new directory lab3
+In which to conduct the lab. I then fetched the buggy coreutils
+from the spec webpage by copying the link and using the wget command like so: 
+
+wget https://web.cs.ucla.edu/classes/spring18/cs35L/assign/coreutils-with-bug.tar.gz\
+
+I then untarred the file I downloaded using the following command:
+
+tar -zxvf coreutils-with-bug.tar.gz
+
+I then change directories into coreutils-with-bug, which Ive just created,
+and configure and make the file using the commands:
+
+./configure
+make
+
+this throws the following Error (as copy-pasted from terminal):
+
+error: conflicting types for 'futimens'
+ int futimens (int, char const *, struct timespec const [2]);
+     ^
+In file included from utimecmp.h:25:0,
+                 from utimecmp.c:25:
+/usr/include/sys/stat.h:373:12: note: previous declaration of 'futimens' was here
+ extern int futimens (int __fd, const struct timespec __times[2]) __THROW;
+
+It appears that the problem here is that there are two functions named 
+"futimens". The patch therefore will hopefully either remove one function or rename one.
+Since the patch is called the "renaming patch", Im guessing one will be renamed.
+
+
+I now download the second file from the spec using the same procedure as before (wget):
+specifically I use the command:
+
+wget https://web.cs.ucla.edu/classes/spring18/cs35L/assign/coreutils.diff
+
+Note that I use this command while still in the coreutils-with-bug directory so that
+it will download there. I now execute the path using the patch command:
+
+patch -p0 < coreutils.diff
+
+this command successfully patches the following files:
+(copy-pasted from the terminal):
+patching file lib/utimens.c
+patching file lib/utimens.h
+patching file src/copy.c
+patching file src/tee.c
+patching file src/touch.c
+
+I then remake the file simply using the command "make".
+For this execution there are no errors. From this we can assume the patch
+fixed the execution error we encountered earlier with the buggy version.
+By examining the diff file, I find that my guess was correct, the patch 
+renames the second instance of futimens to coreutils_futimens, 
+therefore fixing the duplicate function problem.
+
+In order to reproduce the problem easily, I use a .sh script as follows
+(commands taken from the spec):
+
+#!/bin/bash
+
+tmp=$(mktemp -d)
+cd $tmp
+touch -d '1918-11-11 11:00 GMT' wwi-armistice
+touch now
+sleep 1
+touch now1
+TZ=UTC0 ~/35l/ass4/coreutils-with-bug/src/ls -lt --full-time wwi-armistice now now1
+cd ~/35l/ass4/
+rm -fr $tmp
+
+The script creates 3 files, wwi-armistice, now and now1. wwi-armistice having been 
+"made" far in the past, now being made at the current time, and now 
+being made 1 cycle later. It then lists the files contained in the directory
+In order of the time they were made (newest first). The script them cleans 
+up after itself.
+
+After giving myself full permissions for the file (chmod 777 makebug.sh),
+I run it, the output is as follows:
+
+-rw-r--r-- 1 oliveira eeugrad 0 1918-11-11 11:00:00.000000000 +0000 wwi-armistice
+-rw-r--r-- 1 oliveira eeugrad 0 2018-05-04 21:38:07.752965691 +0000 now1
+-rw-r--r-- 1 oliveira eeugrad 0 2018-05-04 21:38:06.750938319 +0000 now
+
+The bug has been successfully reproduced since wwi-armistice is listed first
+which is the incorrect ordering since it is the oldest...by far.
+
+I then set to work on fixing the source file using my script.
+I know im going to use GDB to debug, so im going to step through the erroneous 
+command. First, I step down to the time listing command by inputting the above commands
+by hand:
+
+tmp=$(mktemp -d)
+cd $tmp
+touch -d '1918-11-11 11:00 GMT' wwi-armistice
+touch now
+sleep 1
+touch now1
+
+Im now at the position I want to be at for debugging purposes, So I open up my current 
+file in GDB by using the following command:
+
+gdb ~/35l/ass4/coreutils-with-bug/src/ls
+
+From here, I know that im looking for a bug in a function related to time, specifically time 
+sorting. To inspect the functions I use the command 
+
+info functions
+
+which outputs (copy-pasted from terminal):
+
+File ls.c:
+int main(int, char **);
+void usage(int);
+static size_t calculate_columns(_Bool);
+static void clear_files(void);
+static int compare_atime(V, V);
+static int compare_ctime(V, V);
+static int compare_extension(V, V);
+static int compare_mtime(V, V);
+static int compare_name(V, V);
+static int compare_size(V, V);
+static int compare_version(V, V);
+static int compstr_atime(V, V);
+static int compstr_ctime(V, V);
+static int compstr_extension(V, V);
+static int compstr_mtime(V, V);
+static int compstr_name(V, V);
+static int compstr_size(V, V);
+static _Bool dev_ino_compare(const void *, const void *);
+static void dev_ino_free(void *);
+static size_t dev_ino_hash(const void *, size_t);
+static void dired_dump_obstack(const char *, struct obstack *);
+static void extract_dirs_from_files(const char *, _Bool);
+static void file_failure(_Bool, const char *, const char *);
+static void format_user(uid_t, int);
+static void format_user_or_group(const char *, unsigned long, int);
+static int format_user_width(uid_t);
+static _Bool get_funky_string(char **, const char **, _Bool, size_t *);
+static uintmax_t gobble_file(const char *, enum filetype, _Bool, const char *);
+static void indent(size_t, size_t);
+static _Bool is_colored(enum indicator_no);
+static size_t length_of_file_name_and_frills(const struct fileinfo *);
+static void prep_non_filename_text(void);
+static void print_current_files(void);
+static void print_file_name_and_frills(const struct fileinfo *);
+static void print_long_format(const struct fileinfo *);
+static void print_name_with_quoting(const char *, mode_t, int, struct obstack *);
+
+I look inside some of these functions and find that the sort_files(void) function
+is one I should investigate further, but I might end up back in one of
+the compare functions, because the sort_files function uses them.
+
+to do this, I set a breakpoint at the function by using the command:
+
+break sort_files
+
+I then run the bug by using the command:
+
+run -lt --full-time
+
+I then step through the function and find that it looks like this:
+
+ if (! setjmp (failed_strcoll))
+(gdb) s
+2964	      switch (sort_type)
+(gdb) 
+2969		  switch (time_type)
+(gdb) 
+2975		      func = sort_reverse ? rev_cmp_mtime : compare_mtime;
+(gdb) 
+3034	  qsort (files, files_index, sizeof *files, func);
+
+From this, I see that cmp_mtime is the function I need to further investigate.
+I use the same procedure as before to create a break point at this function and run again:
+This time the command is as follows:
+
+break timespec_cmp
+run -lt --full-time
+
+I step through several times (s) until I can isolate the bug.
+when I come to an assignment (diff) I check to see what diff has been assigned to by using the command
+info locals. I receive the output:
+
+49	  return diff ? diff : a.tv_nsec - b.tv_nsec;
+(gdb) info locals
+diff = -1613826000
+
+And Ive found the bug. What is happening here is the difference between the times 
+(in seconds) is a number with too great of magnitude, resulting in overflow.
+
+This assignment needs to be rewritten in a different way to fix this bug.
+I locate the file with this function (timespec_cmp) and make a copy of it to apply
+the necessary changes by using the following commands:
+
+cd ~/35l/ass4/coreutils-with-bug/lib
+cp timespec.h ../../timespec.h
+
+I then open up my copy of the file and change the function so it uses comparison
+operators rather than subtraction. The updated function is as follows:
+
+ if (a.tv_sec > b.tv_sec) {
+    return 1;
+  } 
+
+else if (a.tv_sec < b.tv_sec) {
+    return -1;
+  }
+  return 0;
+
+I then save my file and create the diff file for the changes I've made as needed for submission
+using the following command:
+
+diff -u coreutils-with-bug/lib/timespec.h timespec.h > coreutils-with-bug/patch.diff
+
+then after making the Changelog file with a short description of the patch,
+I concatenated the diff and change log files using the commands:
+
+cp Changelog lab4.diff
+cat coreutils-with-bug/patch.diff >> lab4.diff 
+
+I then patch the coreutils buggy file in order to test my new product using 
+the command:
+
+patch -p0 < lab4.diff
+
+And now I go to test the final product! After making the new file,
+I use my script I created earlier to run my new version which outputs:
+
+-rw-r--r-- 1 oliveira eeugrad 0 2018-05-05 11:12:04.552965691 +0000 now1
+-rw-r--r-- 1 oliveira eeugrad 0 2018-05-05 11:12:03.550938319 +0000 now
+-rw-r--r-- 1 oliveira eeugrad 0 1918-11-11 11:00:00.000000000 +0000 wwi-armistice
+
+As shown, the patch was successful and the files are now listed in the correct order.
+The spec asks that I test the SEASnet machines to see if they exhibit this bug.
+To do this, I modify my script to work in my home dir like so:
+
+cd ~
+touch -d '1918-11-11 11:00 GMT' wwi-armistice
+touch now
+touch now1
+TZ=UTC0 ls -lt --full-time wwi-armistice now now1
+
+I run these commands and get the output:
+
+-rw-r--r-- 1 oliveira eeugrad 0 2054-12-17 17:28:16.000000000 +0000 wwi-armistice
+-rw-r--r-- 1 oliveira eeugrad 0 2018-05-05 11:55:10.080397000 +0000 now1
+-rw-r--r-- 1 oliveira eeugrad 0 2018-05-05 11:55:10.078396000 +0000 now
+
+As shown, the SEASnet machine fails. This bug has not been patched on our machines.
+
+
+
+
+
+
+
+
+
+
