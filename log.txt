@@ -1,0 +1,102 @@
+Christina Oliveira
+TA:Dhavalikar
+Section 5
+UID: 204803448
+Lab 6: Multithreaded Performance
+
+I first log in to the linux07 server and allocate a directory
+as a workspace for the lab.
+
+I then check to make sure I am using the correct version of sort
+by using the command
+
+sort --version
+
+this outputs:
+
+sort (GNU coreutils) 8.29
+
+Which confirms that I am using the up to date version.
+
+I then construct a command to generate a file containing
+"10,000,000 random single-precision floating point numbers"
+one on each line with no white space. The spec hints that I use
+the od command, and after investigating the man page for od
+I see that I can first use the command
+ "od -tf -N 40000000 < /dev/urandom > floats.txt"
+which will generate 4000000 bytes of floats from dev/random
+and place them into a file floats.txt. Upon opening the file, I
+realize that the addresses at the beginning of each line need to 
+be removed, and that there are two numbers per line that I need to
+separate in order to comply with the spec.
+I remove the addresses using the command:
+sed -i 's/^.\{7\}//' floats.txt
+This command deletes in place the first 7 characters of each line.
+I then need to separate the two numbers on each line and
+remove any whitespace. So I use the
+command:
+cat floats.txt | tr ' ' '\n' | sed '/^$/d' > floats2.txt
+Which does all of this fixes at ones through pipelining.
+The file (floats2.txt) is now in the correct formatting,
+with one float per line and no additional whitespace.
+
+Since my file is now complete I can begin the parallelism
+tests, the commands were formed using what the spec asked for,
+the output being sent to /dev/null.
+-----------------------------
+Test 1: Normal sort 
+Input:
+time -p sort -g floats2.txt > /dev/null
+
+Output:
+real 21.38
+user 109.28
+sys 0.35
+------------------------------
+Test 2: Parallel (1 thread) 
+
+Input: 
+time -p sort -g --parallel=1 floats2.txt > /dev/null
+
+Output:
+real 105.24
+user 104.95
+sys 0.28
+------------------------------
+Test 3: Parallel (2 threads) 
+
+Input: 
+time -p sort -g --parallel=2 floats2.txt > /dev/null
+
+Output:
+real 56.29
+user 106.43
+sys 0.22
+------------------------------
+Test 4: Parallel (4 threads) 
+
+Input: 
+time -p sort -g --parallel=4 floats2.txt > /dev/null
+
+Output:
+real 32.46
+user 108.37
+sys 0.27
+------------------------------
+Test 5: Parallel (8 threads) 
+
+Input: 
+time -p sort -g --parallel=8 floats2.txt > /dev/null
+
+Output:
+real 20.91
+user 109.29
+sys 0.35
+-----------------------------
+
+These tests show that the default sort is likely the 8-thread
+parallel sort, as they have very similar runtimes. However, 
+It seems like single thread would have been the fastest implementation.
+
+
+
