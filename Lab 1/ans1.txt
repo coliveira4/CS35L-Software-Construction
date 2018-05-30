@@ -1,0 +1,88 @@
+Christina Oliveira
+TA:Dhavalikar
+Section 5
+UID: 204803448
+Assignment 1: Lab: Emacs Scavenger Hunt
+
+1.I used the "man man" hint given in section, and after a little scrolling I found that "man -k keyword"
+ can print commands containing any word, where "keyword" is the desired word. So this is the shell command 
+that can be used to print out all commands with a desired keyword.
+
+2.In order to find where the cp and wc commands are located, I used the "which" command learned in section, that gives the 
+location of a command. By typing "which cp" and "which wc" I found that the paths were "/usr/bin/cp" and "/usr/bin/wc", respectively.
+
+3.In order to determine which commands are one character long, I first checked the manual, knowing that I would busing a find-like command. 
+By entering "man find" I was able to identify modifications to the "find" command that could help me. 
+The -name option ends up being what I'm looking for. I then entered 'find /usr/bin -name "?"'in order to identify 
+the single character commands I need. The '"?"' specifies that we are looking for singe character commands (as specifies in man).
+ the terminal gives me back:
+/usr/bin/[
+/usr/bin/w
+/usr/bin/X
+I found (using man) that the [ command is used to evaluate a conditional expression
+that the w command shows who is logged on and what they are doing. 
+and that the X command is actually just a symbolic link to the Xorg command
+ 
+4.In order to find out what is actually executed when the emacs program is run, I first entered the /bin folder, where emacs is held. 
+I know I'm going to use the ls command, so a little digging on man tells
+me ill need the -l option so I enter "ls -l | grep emacs", (here I utilize piping, what is returned from ls is sent to grep). 
+This tell me "emacs" symbolically links to "/etc/alternatives/emacs".
+
+5.In order to find the versions of these two emacs versions, I start by searching on man.By searching "version" on man I find that I can find the version 
+of a program by adding the option "-version". I then find that the version number for the /cs/bin version is 24.3.1 by entering in "/usr/bin/emacs -version"
+and that the version number of plain emacs is 25.3.1 by entering "emacs -version" into the shell. They are different because we are using an older version.
+
+6.In order to find out what these modes mean, I reference the slides from section. Using the slides I see that g+s gives the user accessing some file the same
+permissions as the file owner's group (the + denotes adding a permission, and s denotes the sameness), and that o-x means that we are removing the executable
+permission for "others"(those who don't own the file or are in the file owner's group), which is what the o stands
+ for (the - denotes removing a permission, and the x stand for the executable permission)
+
+7.In order to find directories modified in the past 30 days, I first check the man page for find once again.
+I find that the option "-ctime" will be useful here. I found that in order to look for files branching from the root modified in the past 30 days
+I could enter the command "find / -ctime -30 -type d" where -30 specifies the number of days to go back (modifying the ctime command) and -type d 
+ensures only directories are pulled up, not files.
+
+8.In order to find the number of symbolic links, I first navigate to the parent directory of "find".
+Then I find the word count (wc) of all files starting with l (denoting links) in the same directory as find. This can be done with a
+command that utilizes piping. I used: "ls -l | grep ^l | wc" I found that there are 247 symbolic links.
+
+9.In order to find the oldest file, I first change my directory to the /usr/lib64 directory. 
+I then had to go back and check man for the ls command. I found that the "-t" option will list 
+items in order of modification date with oldest last. We want files that begin with "." so "ls -lt /usr/lib | grep ^." works. Using this, 
+I found the oldest file denoted as starting with a "." was "libgpg-error.so.0.10.0."
+
+10.In order to find where locale gets its data, we can inspect "man locale". Directly from this page, we can see that locale gets its data from two files:
+    /usr/lib/locale/locale-archive  (Usual default locale archive location).
+    /usr/share/i18n/locales      (Usual default path for locale definition files).
+
+11.In order to find what emacs commands have "downcase" in their name,I first opened emacs and used the search shortcut (C-h a downcase)
+ to search for commands with the keyword downcase : I found:
+downcase-word
+downcase-region
+
+12.In order to find the names and meanings of the emacs commands C-M-r through v, I first open up emacs.
+I then utilized the key bindings search function in emacs (C-h b) I then switched screens (C-x o) to the screen I created and searched(C-s keyword) the
+first binding "C-M-r" (since they are listed order) to discover that these bindings corresponded to these commands(their meanings found from their corresponding help pages):
+
+C-M-r           isearch-backward-regexp (initiate a regular expression search, backwards)
+C-M-s           isearch-forward-regexp (initiate a regular expression search, forwards)
+C-M-t           transpose-sexps (Transpose two balanced expressions)
+C-M-u           backward-up-list (move backwards over a parenthetical grouping)
+C-M-v           scroll-other-window (scroll to next open window)
+
+
+13. In order to find what the emacs binding C-g does, I use the same method as problem 12 (using the C-h b bindings function). By searching 
+this key-binding (and following its corresponding help link) I found that it corresponded to the command "keyboard-quit" which signals the quit condition, 
+which during execution of code would cause a direct quit. 
+
+14. In order to find the functionality and key bindings for the yank function, I check the key bindings library in emacs as I did in 
+problem 12 and 13 (C-h b, C-x o, C-s).I find that the keystrokes "C-y" will invoke the yank function and that the yank function 
+will reinsert the last stretch of killed text.
+
+15.In order to determine the difference between the ls -l command and the emacs dired command, I need to know what the tired command does, so I look it up 
+on the emacs key-bindings search page as I have done for the last several problems(C-h b, C-x o, C-s). I find that the tired commands activated by C-x d.
+I then navigate to the /usr/bin directory and try the C-x d and ls -l commands and found that tired lists additional directories (those with . and ..) 
+when compared to the output of the ls -l command.
+
+
+
