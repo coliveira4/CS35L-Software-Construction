@@ -1,0 +1,194 @@
+Christina Oliveira
+TA:Dhavalikar
+Section 5
+UID: 204803448
+Assignment 5: System call programming and debugging
+
+I began by logging in to the 07 linux server and creating a new directory in which
+to do my work. I then create the two files tr2b.c and tr2u.c. The price says that 
+I need to write these programs so that they follow the functionality of the "tr"
+command for buffered and unbuffered content, respectively. 
+
+My first course of action is to investigate the functionality of "tr" The man page
+tells me tr is used to translate characters. in the case of two equal length string
+inputs, tr translates each letter in string 1 to the one in string 2 (where first =
+first, second = second, and so on). if string 1 is longer than string 2, then the last 
+character in string to is taken to be extended for as long as necessary to match length.
+
+I need to implement this function but with some simplifications as stated in the spec.
+I begin writing the tr2b.c program. This is a straightforward algorithm, but I take special
+care to account for all potential inout errors that are specified on the spec. Then, for
+tr2u.c, the same functionality is needed so I copy-paste my tr2b.c and just change the 
+getchar() and putchar() to read and write instead. I also obviously needed to add the library 
+"<unistd.h>" to use these new functions.
+
+I now need to use the strace command to do some basic testing/comparisons between the files
+and their functionalities. To generate a file with 5 mil bytes I use the command:
+"dd if=/dev/urandom of=fivemb.txt bs=1M count=5"
+
+I first need to use the strace command when copying one file to another.
+I compile the tr2b.c file using the command:
+
+gcc -o tr2b tr2b.c -std=gnu99
+
+The compiler had at first issued errors because of the lack of the 
+-std=gnu99 option. I then use the strike command with the -c option to
+see whats going on when I test this file. The command:
+
+strace -c ./tr2b helo gbyi < fivemb.txt > buffered.txt
+
+Outputs to stdout the analysis of the program tr2b with 
+the string arguments "helo" and "gbyi" on the
+file fivemb.txt and outputs the results to buffered.txt.
+
+The output I get is:
+
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 27.13    0.000035           4         9           mmap
+ 17.83    0.000023           6         4           mprotect
+ 10.08    0.000013           7         2           read
+  8.53    0.000011           6         2           open
+  7.75    0.000010          10         1           write
+  7.75    0.000010           3         4           fstat
+  6.98    0.000009           9         1           munmap
+  3.88    0.000005           5         1         1 access
+  3.88    0.000005           5         1           execve
+  2.33    0.000003           2         2           close
+  2.33    0.000003           3         1           brk
+  1.55    0.000002           2         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.000129                    29         1 total
+
+Which shows there was a total of 29 calls to complete the test for this file.
+
+I then compiled and tested the unbuffered version of the c file 
+using the same procedure as above:
+
+gcc -o tr2u tr2u.c -std=gnu99
+
+and then:
+
+strace -c ./tr2u helo gbyi < fivemb.txt > unbuffered.txt
+
+Which outputs
+
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 55.79   24.184537           5   5242880           write
+ 44.21   19.164369           4   5242882           read
+  0.00    0.000000           0         2           open
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         2           fstat
+  0.00    0.000000           0         7           mmap
+  0.00    0.000000           0         4           mprotect
+  0.00    0.000000           0         1           munmap
+  0.00    0.000000           0         1           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00   43.348906              10485784         1 total
+
+Thats a total of over 10 million calls, as expected. In this unbuffered version,
+each byte in this 5mb file requires two system calls, to read and write. So 5mil
+times 2 is 10mil. This shows just how beneficial it is to utilize buffers when it comes to
+system performance and speed (note this took 43 seconds).
+
+I now attempt this same test but for copying a file to my terminal.
+Since the files are already compiled, I use the command:
+
+strace -c ./tr2b helo gbyi < fivemb.txt
+
+which outputs:
+
+time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 31.41    0.000060           7         9           mmap
+ 24.08    0.000046          12         4           mprotect
+  9.95    0.000019           5         4           fstat
+  7.33    0.000014           7         2           read
+  7.33    0.000014           7         2           open
+  5.76    0.000011          11         1           munmap
+  4.71    0.000009           9         1           write
+  4.19    0.000008           8         1         1 access
+  3.66    0.000007           4         2           close
+  1.57    0.000003           3         1           arch_prctl
+  0.00    0.000000           0         1           brk
+  0.00    0.000000           0         1           execve
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.000191                    29         1 total
+
+and then for tr2u:
+
+strace -c ./tr2u helo gbyi < fivemb.txt
+
+outputs:
+
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 58.49   27.299528           5   5242880           write
+ 41.51   19.375889           4   5242882           read
+  0.00    0.000000           0         2           open
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         2           fstat
+  0.00    0.000000           0         7           mmap
+  0.00    0.000000           0         4           mprotect
+  0.00    0.000000           0         1           munmap
+  0.00    0.000000           0         1           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00   46.675417              10485784         1 total
+
+Which shows that for both copying one file to another and for copying to the terminal
+the buffered version is much more efficient than the unbuffered.
+
+I now use the time command to compare the speed of the programs.
+I use the commands I used earlier but for time, so for the file to file
+command:
+
+time ./tr2b helo gbyi < fivemb.txt > buffered.txt
+
+which outputs:
+
+real	0m0.003s
+user	0m0.001s
+sys	0m0.000s
+
+and the file to file command for unbuffered:
+
+time ./tr2u helo gbyi < fivemb.txt > buffered.txt
+
+which outputs:
+
+real	0m10.499s
+user	0m1.266s
+sys	0m9.185s
+
+Then I do the file to terminal command for buffered:
+
+time ./tr2b helo gbyi < fivemb.txt 
+
+which outputs:
+
+real	0m0.002s
+user	0m0.001s
+sys	0m0.000s
+
+and then I do the same for unbuffered:
+
+time ./tr2u helo gbyi < fivemb.txt 
+
+and this outputs:
+
+real	0m9.588s
+user	0m1.328s
+sys	0m8.247s
+
+As we can clearly see, it takes much more time to execute the unbuffered file compared to the
+buffered file for both file to file and file to terminal copying. This is due to the
+huge difference in system calls between the two, as the large amount of system calls required by the 
+unbuffered version requires a bit of time.
+ 
