@@ -1,0 +1,126 @@
+Christina Oliveira
+TA:Dhavalikar
+Section 5
+UID: 204803448
+Assignment 3: Modifying and Rewriting Keystrokes- Lab Notebook
+
+I logged to the linux 07 server and create a new directory in
+ my 35l directoryfor my workspace. I then fetch the tar as
+ instructed by the webpage by extracting the
+link and using a wget command:
+
+wget ftp://ftp.gnu.org/gnu/coreutils/coreutils-8.29.tar.xz
+
+I then use the verification command given in the spec:
+
+gpg --verify --keyring ./gnu-keyring.gpg coreutils-8.29.tar.xz.sig
+
+This gives me an error, the line says the verification failed
+because the file does not exist.
+I decide to untar the file using the tar command, the -x
+ option to untar, and the -v command to show the progress (since
+ im a little suspicious of the verification failure). The commands ends up 
+ looking like this:
+
+tar -xvf coreutils-8.29.tar.xz
+
+I now change directories to the coreutils-8.29 Ive just 
+created. I now need to install coreutils. To figure out
+ how to do this, I snoop around the help files.
+I end up using the command:
+
+./configure --prefix=/u/cs/ugrad/oliveira/35l/coreutils
+
+In order to install coreutils in the desired location.
+It took a minute, as the program installed, but it finally finished
+and it appeared to do so without errors.
+
+I then begin to try to implement the bug by making a directory:
+
+mkdir foo
+
+however, gives me an permissions error. I realize Im in the wrong area 
+and decide to just log out and back in again to navigate back
+to the coreutils directory.
+Now, the mkdir foo command works I also implement the commands:
+
+mkdir bar
+\ls -fA
+
+which outputs:
+.		  bootstrap	  TODO		 doc		
+NEWS	   Makefile.in	tests		  AUTHORS		
+ init.cfg	bar	    NEWS.rej
+..		  bootstrap.conf  INSTALL	 man		
+ChangeLog  cfg.mk	.tarball-version  THANKStt.in		
+ lib		Makefile
+.version	  m4		  THANKS	 thanks-gen	
+build-aux  README	.timestamp	  ABOUT-NLS		 
+config.log	heyo.diff
+.vg-suppressions  configure.ac	  dist-check.mk  .prev-version	
+po	   configure	THANKS.in	  Makefile.am		 
+foo		NEWS.orig
+COPYING		  .mailmap	  gnulib-tests	 src		
+maint.mk   aclocal.m4	GNUmakefile	  THANKS-to-translators 
+ config.status	heyo.diff~
+
+I notice that the output here follows the -f option which, from the man:
+enables the -a option and disables the -C, -g, -l, -n, -o, -r, -s, and -t 
+options. For each argument that is a directory, all directory entries are
+ listed in the same order they are retrieved from the system.
+And does not follow the -A command which lists all entries including those 
+starting with periods (.), but excluding any . or .. entries, as opposed to the
+-a command which is invoked with -f that includes periods but excludes . and ..
+This is expected, per the reported bug.
+
+I now begin work on applying the patch. I look up patch on man and it 
+turns out that patch is a command I can use that is essentially 
+the opposite of diff and will allow me to make any
+changes that are in the new file without having to meticulously 
+go through.So I make a .diff file in emacs containing the patch 
+as given on the linked page on the spec.
+(I just copy-paste the contents).
+
+Now that the changes have been made, I need to re-make the file. 
+To do so I use themake command as stated in the spec. As the
+ command executes (it takes a while), I notice the word recursive,
+ and a little searching confirms my suspicion that 
+make is searching recursively through every file to check for changes. 
+Therefore, almost all of the commands are unnecessary, except for the 
+ones not followed with "no changes needed to be made".
+
+The spec asks that I test that the old bugged-version is intact
+ and that the new version is patched.
+
+By recreating the test case the bug failed on before, I confirm that
+ the patch has been installed on new(\ls -fA). The -a option implied
+ by -f is now overwritten by the -A option and . and ..
+are now not displayed.The output is now:
+		  bootstrap	  TODO		 doc		
+NEWS	   Makefile.in	tests		  AUTHORS		
+ init.cfg	bar	    NEWS.rej
+		  bootstrap.conf  INSTALL	 man		
+ChangeLog  cfg.mk	.tarball-version  THANKStt.in		
+ lib		Makefile
+.version	  m4		  THANKS	 thanks-gen	
+build-aux  README	.timestamp	  ABOUT-NLS		 
+config.log	heyo.diff
+.vg-suppressions  configure.ac	  dist-check.mk  .prev-version	
+po	   configure	THANKS.in	  Makefile.am		 
+foo		NEWS.orig
+COPYING		  .mailmap	  gnulib-tests	 src		
+maint.mk   aclocal.m4	GNUmakefile	  THANKS-to-translators 
+ config.status	heyo.diff~
+
+Notice that . and .. are absent from the output. And  the bugged version
+remains intact for the old version.
+
+
+
+
+
+
+
+
+
+ 

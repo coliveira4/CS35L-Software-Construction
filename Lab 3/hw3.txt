@@ -1,0 +1,38 @@
+Christina Oliveira
+TA:Dhavalikar
+Section 5
+UID: 204803448
+Assignment 3: Modifying and Rewriting Keystrokes-HW Questions
+
+Q1.It improves the performance of ls in that it allows it to
+ comply with the new guidelines for overwriting -f with -A. 
+It might be a "worse" implementation if this was not your 
+intention, but it is always better to have one standard to follow
+so that those kind of mistakes do not happen, so overall, 
+this patch improves the reliability and robustness of ls.
+
+Q2. As mentioned, you need to make sure this is your 
+intention, since this is a new standard. If you use this patch and
+someone doesn't know about it, they might still think 
+that the old way works and implement the command incorrectly.
+
+Q3. When the script randline.py is invoked on an empty file
+ like /dev/null, An out of bounds error (IndexError: 
+list index out of range) is returned because thescript 
+expects the file to contain lines, and and empty file does not.
+
+Q4.When this script is invoked with python3, (python3 randline.py 
+/dev/null), An error is still thrown, but this time a
+syntax error (SyntaxError: invalid syntax). This is 
+because online python2, python 3 does not accept tuple parameters.
+
+
+
+
+
+
+
+
+
+
+ 
