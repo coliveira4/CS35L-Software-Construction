@@ -1,0 +1,66 @@
+#!/bin/bash 
+#Christina Oliveira
+#UID: 204803448
+
+                                                                                                                                                                         
+IFS=$'\n'
+dir=$1   #aquire first and only argument                                                                                                                                             
+
+files=`ls -a $dir | sort`  #sort the input                                                                                                                                           
+
+declare -a dot    #array to hold . files                                                                                                                                             
+declare -a reg    #array to hold regular files                                                                                                                                       
+
+let countdot=0    #and the associated counts                                                                                                                                         
+let countreg=0
+
+for file in $files       #this loop sorts the files into their respective arrays                                                                                                     
+do
+   fullpath="$dir/$file"
+     if [ ! -r $fullpath ] #ensure read permissions are enabled                                                                                                                      
+     then
+     echo "You do not have read permissions"
+     fi
+     if [[ -f $fullpath && ! -L $fullpath ]]
+     then
+     if [[ $file == .* ]]
+          then
+          dot[$countdot]="$dir/$file"
+          countdot=$((countdot+1))
+          else
+          reg[$countreg]="$dir/$file"
+          countreg=$((countreg+1))
+          fi
+    fi
+done
+
+dot=("${dot[@]}" "${reg[@]}")      #dots are at the start now, so they will be "preferred"                                                                                           
+count1=${#dot[@]}
+
+for ((i=0;i<$count;i++))   #this loop removes duplicates                                                                                                                             
+do
+    for (( j=$i+1;j<$count;j++))
+    do
+    cmp -s "${dot[$i]}" "${dot[$j]}"
+    if [ $? -eq 0 ]
+    then
+    ln -f "${dot[$i]}" "${dot[$j]}"
+    fi
+    done
+done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

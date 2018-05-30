@@ -1,0 +1,241 @@
+Christina Oliveira
+TA:Dhavalikar
+Section 5
+UID: 204803448
+Lab 2: Spell-Checking Hawaiian
+
+First, I logged onto the linux server and created this log document in 
+order to record my work.
+
+I then checked to see if I was in the POSIX locale as mandated by the 
+specification by using the shell command "locale". I turned out to be
+in "en_US.UTF-8" instead, so I used the shell command "export LC_ALL='C'" 
+as told by the spec to rectify this issue. I then double checked (using 
+the locale command) that the locale was now C.
+
+I then started on creating my the text file, "words". According to the 
+specification, this text file needs to contain a sorted list of all 
+English words. To accomplish this I used the command 
+"sort /usr/share/dict/words > words" to sort the items in the existing 
+words file into my new words file. The ">" functions to direct the output 
+of the sort into the new file.
+
+To ensure that this worked correctly, I opened the words file using emacs.
+Since everything seemed to be in order, I moved the file to a new directory 
+within my 35l directory to create a fresh workspace for this project.
+
+I then fetched a copy of the lab specification website by using the 
+wget command, specifically:
+"wget https://web.cs.ucla.edu/classes/spring18/cs35L/assign/assign2.html"
+This file was then converted to .txt format using the command
+"mv assign2.html assign2.txt".
+
+I then entered the shell commands as listed on the specification and noted 
+their outputs as follows:
+
+for "tr -c 'A-Za-z' '[\n*]' < assign2.txt", the first thing I notice is that 
+there are no special characters, and that there are many new lines. By looking 
+at the man page for tr (which I find is short for translate) I find
+that the option "-c" takes the complement of the specified 
+characters, here "A-Za-z", which would be any character that
+ is not a letter. tr then replaces said characters with a newline (\n).
+
+for "tr -cs 'A-Za-z' '[\n*]' < assign2.txt" I first check again on the
+man page for tr what the option "-s" does, and I find that the s stands
+for squeeze and that the only difference between this command and the 
+first is that for each character inserted by tr (here \n), if there 
+are multiple occurrences, the characters will be "squeezed" together and
+only occur once, which explains why there are are only single newlines 
+in this document. So, bottom line, this command does the same as the first,
+except "squeezing" of the added newline happens, resulting in a impact list
+of all the words in the document.
+
+for "tr -cs 'A-Za-z' '[\n*]' < assign2.txt | sort " I plainly see that this
+ differs only from the previous in that the words are now sorted in alphabetic
+ order, as expected from feeding the specious output into sort.
+
+for "tr -cs 'A-Za-z' '[\n*]' < assign2.txt | sort -u" I notice that duplicate
+ words are gone from the sorted list created above, and a quick check of the 
+man page for sort confirms this: the -u option stands for unique and removes 
+duplicate entries.
+
+for "tr -cs 'A-Za-z' '[\n*]' < assign2.txt | sort -u | comm - words" I notice
+that words from the assign2 file that shouldn't be in words (because they are
+not English words) are in the left-most column, the center column is a long 
+list of words, likely the contents of the words file, and the right-most column
+is filled with words that are in the assign2 file and are words (and therefore
+in the words file). By checking the man page for comm I see that this command 
+is doing exactly as I thought, it compares the files line by line, words unique 
+to each in the first two, and words common to each in the last.
+
+for "tr -cs 'A-Za-z' '[\n*]' < assign2.txt | sort -u | comm -23 - words" I 
+see that this command outputs only the first column (the left-most) of the 
+previous command. This gives us a list of all words appearing in 
+our assign2.txt file that do not appear in words (and therefore
+the English dictionary), essentially acting as a rudimentary 
+"spellcheck", though there are some issues such as legitimate 
+words like "a" and "so" being in the list.
+
+Now that these commands have been sorted out, I fetch the 
+English-to-Hawaiian webpage using wget as I did earlier 
+(specifically, I use the command:
+"wget http://mauimapp.com/moolelo/hwnwdseng.htm").
+I then convert it to .txt as I did before (mv hwnwdseng.htm hwn.txt).
+
+I then open up hwn.txt to check it out and see what text patterns
+I can exploit to extract the desired table. I notice that each 
+word is surrounded by <td> and <\td>, with the English word coming
+first and the Hawaiian second. Though there are other items that
+follow this pattern, I figure I can remove them later, so I decide
+the first step for the script should be to extract all "words" 
+that start with a "<td>" and end with a "</td>". This will be 
+problematic because the <td>s will still be attached to the "words",
+but I can deal with this later.To do this I can use the
+command "grep '<td>.\{1,\}<\/td>' |" which extracts words
+that begin with the keyword <td>, have any number of characters
+preceding the <td>, until a </td> is reached, then the 
+output is piped to the next step.
+
+
+From here, I know that I need to extract the Hawaiian words 
+from this list of Hawaiian and English "words". I notice 
+that the basic pattern here is that there is a Hawaiian
+word every other word, starting with the second word.
+So from my current list, I delete the first word and 
+every other word from then on. I can do this using the 
+command "sed -n '1~2!p' - |". This command uses a technique learned
+in section using the stream editor to output the first line
+and then increment by two lines and output, until the end of the file is
+reached, then the output is pipelined to the next step. 
+At this point, all of the english words will have been removed
+for our next step.
+
+Now that we have just the Hawaiian words remaining, we need 
+to find a way to alter them to fit the specifications. The words need to be
+de-cased, and the html tags <td> need to be removed. Additionally, in some 
+cases there are multiple words on a line, so these words need to be given 
+a newline. Finally, the grave character needs to be replaced with an 
+apostrophe in all cases, as specified. 
+
+Ill start with the de-casing. I need to replace all upper-case characters with
+their lower-case equivalent. I can do this using a technique learned in the 
+earlier part of the lab using tr: "tr "A-Z" "a-z" |". This will replace all
+instances of upper-case characters and replace them with the lower-case 
+equivalent, as desired. The output is then piped to the next command.
+
+Then, to remove the grave characters and replace them with an "'", the
+same simple search and replace strategy is used. I used the command:
+"tr "`" "\'" |", which performs as specified above and then pipes to the next
+command.
+
+Now, I need to find way to search and replace the tags with nothing.
+I originally did this with several commands, but I found a way to combine them using 
+semicolons:
+"sed 's/<td>//g;s/<\/td>//g;s/<u>//g;s/<\/u>//g' |"  
+This command uses sed to substitute (hence the s) the tags with nothingness.
+What is being substituted is the item between the last two /s, which here is nothing.
+After doing this, the command pipes the output to the next command.
+
+I now see that I can utilize this same technique to remove the excess
+whitespace and "substitute" it with nothingness, using the command:
+"sed "s/^\s*//g" |". The result is then piped to the next command.
+
+Again, the same technique is used to get rid of the multiple words
+on the same line issue. Using the command:
+"sed -E "s/,\s|\s/\n/g" |", we can do so. The -E option is used to accommodate 
+extended regular expressions. the | then pipes the output to the next command.
+
+As an additional check (as the spec mandates), We still need to exclude 
+any words that contain non-Hawaiian letters. To do this we can use the command:
+"grep "^[pk\' mnwlhaeiou]\{1,\}$" |", which uses the grep command 
+to eliminate words containing the complement of the Hawaiian 
+letters (and therefore any illegal letter).
+
+Finally, we sort and delete repeats in the remaining output
+using the command:
+"sort -u", the u option being used to delete duplicate words,
+as specified in the specification. As this command is the
+final one, It does not pipeline to anything. and we are done!
+
+The complete script is therefore (with the script header included):
+
+#!/bin/bash
+grep '<td>.\{1,\}<\/td>' |
+sed -n  '1~2!p' - |
+tr "A-Z" "a-z" |
+tr "\`" "\'" |
+sed 's/<td>//g;s/<\/td>//g;s/<u>//g;s/<\/u>//g' |
+sed "s/^\s*//g" |
+sed -E  "s/,\s|\s/\n/g" |
+grep "^[pk\' mnwlhaeiou]\{1,\}$" |
+sort -u
+
+This at first gives me a permissions error, but I easily give myself executable
+permissions for the build words files using the chmod command:
+"chmod u+x buildwords".
+
+I then am able to thoroughly test my script, using the assignment page and
+the Hawaiian page as basic test input. I did this by using variations of 
+the command given the spec, for example: 
+"cat assign2.html hwn.html | ./buildwords | less"
+The program is observed to behave robustly.
+
+Now, for the next part of the lab, the spec asks that we modify the 
+"rudimentary spell-check" command we observed the first part of the 
+lab so that it works for Hawaiian words instead of English ones. Creating 
+our Hawaiian spellchecker, the namesake of this lab!
+
+ 
+To check for words that are misspelled in Hawaiian:
+"cat assign2.txt | tr '[:upper:]' '[:lower:]' | tr -cs 
+"pk\'mnwlhaeiou" '[\n*]' | sort -u | comm -23 - hwords > misspelledH.txt"
+This command checks each word against the Hawaiian dictionary, here 
+words, a file I created using my script to contain all Hawaiian words the
+Hawaiian website. This command uses the same methodology as the spellchecker
+in the first part of the lab but has the extra check for Hawaiian words, 
+which should only contain the letters specified in the spec. Using the "wc" command
+I find there are 197 misspelled "Hawaiian" words in assign2.txt
+
+To find words misspelled in Hawaiian but not in English and vice versa, It will be 
+helpful to create a more robust English spellchecker. This is easy to do by 
+modifying the Hawaiian spellchecker to:
+"cat assign2.txt | tr -cs 'A-Za-z' '[\n*]' | tr '[:upper:]' '[:lower:]'
+| sort -u | comm -23 - words > misspelledE.txt"
+Which takes the text in assign2 and spellchecks it against the
+English dictionary created earlier, and outputs the misspelled words.
+
+By combining these two files we have created, It is easy to see which words are
+misspelled in Hawaiian and not English and vice versa. I simply use the command:
+comm -13 misspelledE.txt misspelledH.txt
+to find that some examples of words misspelled in Hawaiian but not in english are:
+how, link, people, plea
+and the command: comm -13 misspelledE.txt misspelledH.txt | wc -l 
+to find that there are 192 instances of such words.
+
+Using the same methods as above but switching the option we can find words
+misspelled in English but not in Hawaiian.
+(comm -23 misspelledE.txt misspelledH.txt and
+comm -23 misspelledE.txt misspelledH.txt | wc -l).
+From this, I find that there are 33 such words, some examples being:
+po, I, e
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
