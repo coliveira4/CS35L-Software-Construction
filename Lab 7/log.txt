@@ -1,0 +1,139 @@
+Christina Oliveira
+TA:Dhavalikar
+Section 5
+UID: 204803448
+Assignment 7: Beaglebone
+Partner Edward Vergara
+
+Setup:
+
+I first plugged my Beaglebone into my Mac and clicked
+the device icon that appeared on my desktop. I visited
+The start.htm page that was in the devices files, and followed the
+instructions to install the drivers needed for mac there. The links
+there were acting strange so I instead used the piazza link for the
+driver needed, which worked better. I followed the installer's 
+instructions, ran the command 
+
+"sudo rm -rf /System/Library/Extensions/HoRNDIS.kext"
+
+in the terminal, and then restarted my computer.
+I then opened up a new terminal window and used the command:
+
+"sudo ssh root@192.168.7.2"
+
+which prompted me for my password, which I at first assumed
+was my beaglebones root password, but was instead my mac's
+password. I was then prompted for the root's password. 
+I then started the connmanctl terminal to log on to the wifi.
+I use the commands:
+
+enable wifi
+scan wifi
+services
+
+after scanning and using the command "services" I see that the desired 
+wifi network, cs3760 is not present, I instead connect to the 
+UCLA_WIFI_RES network:
+
+UCLA_WIFI_RES  wifi_2cf7f1066912_55434c415f574946495f524553_managed_none
+
+and since this wifi does not require additional
+authentication unlike other ucla networks, the command:
+
+connect wifi_2cf7f1066912_55434c415f574946495f524553_managed_none
+
+works. I then "quit" this terminal not that im connected.
+
+Using the command "ifconfig" I find that my IP address is
+169.232.171.138.
+
+I now update the database of apt-get using the command:
+
+sudo apt-get update
+
+I then make sure xauth and xvfb are installed using the commands:
+
+sudo apt-get install xauth
+sudo apt-get install xvfb
+
+I then open up the files /etc/ssh/sshd_config to ensure 
+that X11 forwarding is enabled. Im using a use board 
+so I find that it already is.
+
+My setup is now complete, 
+as I choose to not install firefox right now.
+
+Laboratory:
+
+To ensure the environment was set up correctly I run the
+following command and get the following output:
+
+root@204803448:~# dpkg --get-selections | grep openssh
+openssh-client					install
+openssh-server					install
+openssh-sftp-server				install
+
+which is as expected and shows me that things are working correctly.
+
+At this point I realize that in order for sshing to work I need
+to switch wifi networks to the lab network so I use the process detailed
+above to connect my partner and I to the Lab rooms (3760) wifi,  
+
+I then generated the key pair using the command:
+
+ssh-keygen
+
+I let it save to the default directory:
+
+/root/.ssh/id_rsa
+
+and then entered a password:
+
+heyohowareyou
+
+(I first tried hey, but apparently the password minimum is 4 characters)
+
+I then added a guest user so that edward could ssh into my board.
+I used the command:
+
+sudo useradd -d /home/guest -m guest
+
+To do so.
+I then gave this account a password using the command:
+
+sudo passwd guest
+
+I am then prompted to enter a password so I make it "123456"
+
+I then navigate to the guest directory (cd /home/guest), and
+create the .ssh directory (sudo mkdir .ssh).
+
+I need to change the permissions on this dir so I use the commands:
+
+sudo chown -R guest .ssh
+sudo chmod 700 .ssh
+
+So that a guest user can access and write to .ssh.
+
+I now can ssh into my partners board using the commands:
+ssh-copy-id -i guest@169.232.69.191
+ssh guest@169.232.69.191
+
+I then test the connection by creating a file, test (touch test) and 
+then on edwards computer using the ls command to see that the file test
+had indeed been created.
+
+However, we are unable to create displays on the hosts screen remotely,
+it results in errors stating that the boards do not have displays.
+
+
+
+
+
+
+
+
+
+
+ 
