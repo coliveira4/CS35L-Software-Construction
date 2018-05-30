@@ -1,0 +1,41 @@
+Christina Oliveira
+TA:Dhavalikar
+Section 5
+UID: 204803448
+Assignment 7: Beaglebone
+
+Q: Suppose the other teams really had been observing all the bytes going across the network.
+Is your resulting network still secure? If so, explain why, and explain whether your 
+answer would change if (1) you assumed the other teams had also tapped your keyboards 
+after you completed all client-server setup and had thereby obtained your team's 
+keystrokes during later operation, or (2) you are booting off USB and you assume 
+the other teams temporarily had physical control of the USB. If not, explain any
+weaknesses of your team's setups, focusing on possible attacks by such outside
+observers.
+
+A: If the other teams had access to every byte going across
+the network, including mine, the resulting network would still
+be secure. This is because the bytes would be encrypted with the
+public and private keys so they would not be able to gain insight
+on my activity. However, If (1) the other teams had access to 
+my keystrokes, they would then have access to my passwords! they would
+then be able to decrypt my data using the keys since they would now be
+ able to access them, this is why we need to keep our passwords safe!
+Additionally, If the other teams had temporary physical control over my USB,
+then my data would also be insecure beach they could access my public and 
+private keys this way and be able to encrypt and decrypt my data.
+
+Explain why the gpg2 --verify command in the following instructions doesn't 
+really verify that you personally created the file in question. How would you 
+go about fixing this problem?
+
+the --verify option only verifies the signature with the public key. It does not
+however check who created the file. This is a vulnerability since anyone could access
+ your public key and generate a signature from it. this could be fixed by generating
+the signature using the private key, then no-one except you, unless they had the password,
+could generate a signature.
+
+
+
+
+ 
